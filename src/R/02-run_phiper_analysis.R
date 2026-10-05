@@ -2121,7 +2121,7 @@ for (cmp_idx in seq_along(comparisons)) {
         mutate(
           weighted_score = safe_rescale01(abs(T_obs_stand)) * safe_rescale01(max_delta)
         ) %>%
-        select(-protein_annotation) %>%
+        select(-dplyr::any_of("protein_annotation")) %>%
         dplyr::arrange(
           desc(weighted_score)
         )
