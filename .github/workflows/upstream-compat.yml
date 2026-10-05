@@ -49,10 +49,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
-      SMOKE_DIR: ${{ runner.temp }}/smoke
       PHIPER_REF: ${{ inputs.phiper || 'Polymerase3/phiper' }}
       PHIPERIO_REF: ${{ inputs.phiperio || 'Polymerase3/phiperio' }}
     steps:
+      - name: Set smoke-test directory
+        run: echo "SMOKE_DIR=${RUNNER_TEMP}/smoke" >> "${GITHUB_ENV}"
+
       - uses: actions/checkout@v4
         with:
           # under workflow_call the default would be the calling repository
