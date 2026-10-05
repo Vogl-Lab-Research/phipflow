@@ -1,0 +1,24 @@
+# Files the smoke test expects in tests/fixture/CI-Test after a full run.
+# Paths are relative to the project directory. Blank lines and # comments are ignored.
+
+# 01-create_phiper_object.R
+Data/CI-Test.parquet
+
+# 02-run_phiper_analysis.R: cross-sectional group
+results/Status_BL/Case_BL_vs._Control_BL/alpha_diversity/table.xlsx
+results/Status_BL/Case_BL_vs._Control_BL/beta_diversity/permanova_results.rds
+results/Status_BL/Case_BL_vs._Control_BL/POP_framework/single_peptide.csv
+results/Status_BL/Case_BL_vs._Control_BL/POP_framework/taxa_ranks.csv
+results/Status_BL/Case_BL_vs._Control_BL/DELTA_framework/delta_table.csv
+
+# 02-run_phiper_analysis.R: longitudinal group
+results/Status_Timepoint/Case_BL_vs._Case_FU/alpha_diversity/table.xlsx
+results/Status_Timepoint/Case_BL_vs._Case_FU/beta_diversity/permanova_results.rds
+results/Status_Timepoint/Case_BL_vs._Case_FU/similarity/similarity_results.rds
+results/Status_Timepoint/Case_BL_vs._Case_FU/POP_framework/single_peptide.csv
+results/Status_Timepoint/Case_BL_vs._Case_FU/POP_framework/taxa_ranks.csv
+results/Status_Timepoint/Case_BL_vs._Case_FU/DELTA_framework/delta_table.csv
+
+# 03-render_phiper_reports.R
+results/Status_BL/summary_report_Status_BL.html
+results/Status_Timepoint/summary_report_Status_Timepoint.html

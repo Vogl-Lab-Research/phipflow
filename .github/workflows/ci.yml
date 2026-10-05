@@ -1,0 +1,64 @@
+# Tests phipflow changes against the pinned production container.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    name: R helper unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::testthat
+            any::withr
+            any::purrr
+            any::scales
+
+      - name: Run testthat
+        run: Rscript -e 'testthat::test_dir("tests/testthat", stop_on_failure = TRUE)'
+
+  smoke-test:
+    name: End-to-end smoke test (pinned container)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Set smoke-test directory
+        run: echo "SMOKE_DIR=${RUNNER_TEMP}/smoke" >> "${GITHUB_ENV}"
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: nf-core/setup-nextflow@v2
+
+      - name: Run phipflow on the CI-Test fixture
+        run: tests/run_smoke_test.sh
+
+      - name: Upload logs and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-pinned
+          path: |
+            ${{ env.SMOKE_DIR }}/.nextflow.log
+            ${{ env.SMOKE_DIR }}/CI-Test/results/*/summary_report_*.html
+            ${{ env.SMOKE_DIR }}/work/**/.command.log
+          if-no-files-found: ignore
