@@ -1,0 +1,107 @@
+# Checks that phipflow still works with the newest phiper / phiperio.
+#
+# The pinned production container is extended with phiper and phiperio
+# installed from GitHub (main by default), then the smoke test is run.
+#
+# Triggers:
+#   - weekly schedule
+#   - manually (Actions tab -> "Upstream compatibility" -> Run workflow),
+#     optionally with a specific pak ref, e.g. Polymerase3/phiper#70 (a PR)
+#   - from another repository via workflow_call, e.g. phiper's own CI:
+#
+#       uses: csReynaB/phipflow/.github/workflows/upstream-compat.yml@main
+#       with:
+#         phiper: Polymerase3/phiper@${{ github.sha }}
+name: Upstream compatibility
+
+on:
+  schedule:
+    - cron: "0 4 * * 1" # Mondays 04:00 UTC
+  workflow_dispatch:
+    inputs:
+      phiper:
+        description: "pak ref for phiper"
+        default: Polymerase3/phiper
+      phiperio:
+        description: "pak ref for phiperio"
+        default: Polymerase3/phiperio
+  workflow_call:
+    inputs:
+      phiper:
+        type: string
+        default: Polymerase3/phiper
+      phiperio:
+        type: string
+        default: Polymerase3/phiperio
+      phipflow_repo:
+        type: string
+        default: csReynaB/phipflow
+      phipflow_ref:
+        type: string
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-test-latest:
+    name: Smoke test (phiper ${{ inputs.phiper || 'Polymerase3/phiper' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SMOKE_DIR: ${{ runner.temp }}/smoke
+      PHIPER_REF: ${{ inputs.phiper || 'Polymerase3/phiper' }}
+      PHIPERIO_REF: ${{ inputs.phiperio || 'Polymerase3/phiperio' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # under workflow_call the default would be the calling repository
+          repository: ${{ inputs.phipflow_repo || github.repository }}
+          ref: ${{ inputs.phipflow_ref || github.ref }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: nf-core/setup-nextflow@v2
+
+      - name: Build container with latest phiper / phiperio
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          base_image=$(nextflow config -profile docker -flat | sed -n "s/^params.container = '\(.*\)'$/\1/p")
+          echo "Base image: ${base_image}"
+
+          docker run --name phipflow-latest \
+            -e GITHUB_PAT -e PHIPER_REF -e PHIPERIO_REF \
+            "${base_image}" \
+            Rscript -e 'pak::pak(c(Sys.getenv("PHIPERIO_REF"), Sys.getenv("PHIPER_REF")), ask = FALSE)'
+
+          # drop the token and restore the base image's default command
+          docker commit \
+            --change 'ENV GITHUB_PAT=' \
+            --change 'CMD ["R"]' \
+            phipflow-latest phipflow-latest:local
+
+          docker rm phipflow-latest
+
+      - name: Installed versions
+        run: |
+          docker run --rm phipflow-latest:local Rscript -e \
+            'for (p in c("phiper", "phiperio")) { d <- packageDescription(p); cat(p, d$Version, d$RemoteSha, "\n") }' \
+            | tee -a "${GITHUB_STEP_SUMMARY}"
+
+      - name: Run phipflow on the CI-Test fixture
+        run: tests/run_smoke_test.sh --container phipflow-latest:local
+
+      - name: Upload logs and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-latest
+          path: |
+            ${{ env.SMOKE_DIR }}/.nextflow.log
+            ${{ env.SMOKE_DIR }}/CI-Test/results/*/summary_report_*.html
+            ${{ env.SMOKE_DIR }}/work/**/.command.log
+          if-no-files-found: ignore
