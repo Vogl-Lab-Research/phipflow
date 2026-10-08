@@ -9,7 +9,7 @@
 #     optionally with a specific pak ref, e.g. Polymerase3/phiper#70 (a PR)
 #   - from another repository via workflow_call, e.g. phiper's own CI:
 #
-#       uses: csReynaB/phipflow/.github/workflows/upstream-compat.yml@main
+#       uses: Vogl-Lab-Research/phipflow/.github/workflows/upstream-compat.yml@main
 #       with:
 #         phiper: Polymerase3/phiper@${{ github.sha }}
 name: Upstream compatibility
@@ -35,7 +35,7 @@ on:
         default: Polymerase3/phiperio
       phipflow_repo:
         type: string
-        default: csReynaB/phipflow
+        default: Vogl-Lab-Research/phipflow
       phipflow_ref:
         type: string
         default: main

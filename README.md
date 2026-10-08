@@ -1,7 +1,7 @@
 # phipflow
 
-[![CI](https://github.com/csReynaB/phipflow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/csReynaB/phipflow/actions/workflows/ci.yml)
-[![phiper@main compatibility](https://github.com/csReynaB/phipflow/actions/workflows/upstream-compat.yml/badge.svg?branch=main)](https://github.com/csReynaB/phipflow/actions/workflows/upstream-compat.yml)
+[![CI](https://github.com/Vogl-Lab-Research/phipflow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Vogl-Lab-Research/phipflow/actions/workflows/ci.yml)
+[![phiper@main compatibility](https://github.com/Vogl-Lab-Research/phipflow/actions/workflows/upstream-compat.yml/badge.svg?branch=main)](https://github.com/Vogl-Lab-Research/phipflow/actions/workflows/upstream-compat.yml)
 
 Version 1.1.0
 
@@ -830,7 +830,7 @@ If the parquet object already exists and the corresponding process hash has not 
 
 ---
 
-## Rebuilding and publishing the Docker image
+## Releases and the Docker image
 
 The Apptainer image is built from this GHCR Docker image:
 
@@ -838,41 +838,28 @@ The Apptainer image is built from this GHCR Docker image:
 ghcr.io/csreynab/phipflow-r4.6.0-quarto1.9.37:0.1.0
 ```
 
-To rebuild locally, a Dockerfile and docker/install_r_packages.R are provides so you can run:
+The `Dockerfile` installs `phiper` and `phiperio` from their GitHub `main`, so the image has to be rebuilt to pick up upstream changes. The `Release` GitHub Actions workflow does this:
+
+1. builds the image from the `Dockerfile`,
+2. runs the smoke test (see [Testing](#testing)) inside it,
+3. pushes it to GHCR as `ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:<version>`,
+4. commits the new image tag to `nextflow.config` and this README, tags `v<version>` and creates a GitHub release listing the installed `phiper`/`phiperio` versions and commits.
+
+It runs weekly (Tuesdays) and releases a patch version only if `phiper` or `phiperio` `main` has moved since the pinned image was built. After changing the `Dockerfile`, `docker/install_r_packages.R` or the pipeline, start it manually from the Actions tab ("Release" -> "Run workflow") and choose which version part to bump.
+
+On LiSC, a nightly cron job (`~kolek/scripts/update_phipflow.py`) runs `git pull --ff-only` in `/lisc/data/scratch/ccr/CR_projects/phipflow`. If the pull changed the image in `nextflow.config`, it rebuilds `containers/phipflow-r4.6.0-quarto1.9.37.sif` from it.
+
+To build the image locally:
 
 ```bash
-docker build -t phipflow-r4.6.0-quarto1.9.37 . # or whathever label you want
+docker build -t phipflow-r4.6.0-quarto1.9.37 .
 ```
-
-Tag for GitHub Container Registry:
-
-```bash
-docker tag phipflow-r4.6.0-quarto1.9.37 \
-  ghcr.io/user/phipflow-r4.6.0-quarto1.9.37:0.1.0
-```
-
-Push:
-
-```bash
-docker push ghcr.io/user/phipflow-r4.6.0-quarto1.9.37:0.1.0
-```
-
-Then rebuild the `.sif` on LiSC:
-
-```bash
-cd /lisc/data/scratch/ccr/CR_projects/phipflow/containers
-
-apptainer build --force phipflow-r4.6.0-quarto1.9.37.sif \
-  docker://ghcr.io/csreynab/phipflow-r4.6.0-quarto1.9.37:0.1.0
-```
-
-Note: overwriting the same `0.1.0` tag is convenient, but less reproducible than using versioned tags such as `0.1.1`, `0.1.2`, etc.
 
 ---
 
 ## Testing
 
-Two GitHub Actions workflows run the tests:
+Two GitHub Actions workflows run the tests (the `Release` workflow also runs the smoke test before publishing an image):
 
 | Workflow | When | What it checks |
 |---|---|---|
@@ -896,7 +883,7 @@ tests/run_smoke_test.sh
 ```yaml
 jobs:
   phipflow:
-    uses: csReynaB/phipflow/.github/workflows/upstream-compat.yml@main
+    uses: Vogl-Lab-Research/phipflow/.github/workflows/upstream-compat.yml@main
     with:
       phiper: Polymerase3/phiper@${{ github.sha }}
 ```

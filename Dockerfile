@@ -1,5 +1,8 @@
 FROM rocker/r-ver:4.6.0
 
+# Links the GHCR package to the repository
+LABEL org.opencontainers.image.source=https://github.com/Vogl-Lab-Research/phipflow
+
 ARG QUARTO_VERSION=1.9.37
 ARG DEBIAN_FRONTEND=noninteractive
 

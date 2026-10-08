@@ -1,0 +1,163 @@
+# Builds the container image, tests it, publishes it to GHCR and creates a release.
+#
+# The Dockerfile installs phiper and phiperio from their GitHub main, so a
+# rebuilt image picks up upstream changes. A release vX.Y.Z consists of:
+#   - the image ghcr.io/<owner>/phipflow-r4.6.0-quarto1.9.37:X.Y.Z
+#   - a commit on main pinning that image in nextflow.config and README.md
+#   - the tag vX.Y.Z and a GitHub release listing the phiper / phiperio commits
+#
+# Triggers:
+#   - weekly schedule: patch release, only if phiper or phiperio main has
+#     moved past the commits installed in the currently pinned image
+#   - manually (Actions tab -> "Release" -> Run workflow): always releases,
+#     e.g. after changing the Dockerfile, docker/install_r_packages.R or the
+#     pipeline itself
+name: Release
+
+on:
+  schedule:
+    - cron: "0 4 * * 2" # Tuesdays 04:00 UTC, the day after the upstream canary
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version part to bump"
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+concurrency:
+  group: release
+
+env:
+  IMAGE_NAME: phipflow-r4.6.0-quarto1.9.37
+
+jobs:
+  check:
+    name: Check for upstream changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      build: ${{ steps.compare.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Compare pinned image with phiper / phiperio main
+        id: compare
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" != schedule ]; then
+            echo "build=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          image=$(sed -n "s/^ *params.container = '\(ghcr\.io\/[^']*\)'$/\1/p" nextflow.config)
+          docker pull --quiet "${image}"
+          installed=$(docker run --rm "${image}" Rscript -e \
+            'for (p in c("phiper", "phiperio")) cat(packageDescription(p)$RemoteSha, "\n", sep = "")')
+          upstream=$(for p in phiper phiperio; do
+            git ls-remote "https://github.com/Polymerase3/${p}.git" refs/heads/main | cut -f1
+          done)
+
+          {
+            echo "Pinned image: \`${image}\`"
+            echo
+            echo "| | phiper | phiperio |"
+            echo "|---|---|---|"
+            echo "| pinned image | ${installed//$'\n'/ | } |"
+            echo "| main | ${upstream//$'\n'/ | } |"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          if [ "${installed}" = "${upstream}" ]; then
+            echo "build=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "build=true" >> "${GITHUB_OUTPUT}"
+          fi
+
+  release:
+    name: Build, test and release image
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: write
+      packages: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Set smoke-test directory
+        run: echo "SMOKE_DIR=${RUNNER_TEMP}/smoke" >> "${GITHUB_ENV}"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0 # all tags, for the version bump
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: nf-core/setup-nextflow@v2
+
+      - name: Build image
+        run: docker build -t phipflow:candidate .
+
+      - name: Installed versions
+        run: |
+          docker run --rm phipflow:candidate Rscript -e \
+            'for (p in c("phiper", "phiperio")) { d <- packageDescription(p); cat(sprintf("| %s | %s | [%.7s](https://github.com/Polymerase3/%s/commit/%s) |\n", p, d$Version, d$RemoteSha, p, d$RemoteSha)) }' \
+            > "${RUNNER_TEMP}/packages.md"
+          cat "${RUNNER_TEMP}/packages.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Run phipflow on the CI-Test fixture
+        run: tests/run_smoke_test.sh --container phipflow:candidate
+
+      - name: Push image
+        id: push
+        env:
+          BUMP: ${{ inputs.bump || 'patch' }}
+        run: |
+          last=$(git tag --list 'v[0-9]*' --sort=-v:refname | head -n 1)
+          IFS=. read -r major minor patch <<< "${last#v}"
+          major=${major:-0}; minor=${minor:-0}; patch=${patch:-0}
+          case "${BUMP}" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+          esac
+          version="${major}.${minor}.${patch}"
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE_NAME}:${version}"
+
+          echo "${GH_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+          docker tag phipflow:candidate "${image}"
+          docker push "${image}"
+
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "image=${image}" >> "${GITHUB_OUTPUT}"
+
+      - name: Pin image, tag and create release
+        env:
+          VERSION: ${{ steps.push.outputs.version }}
+          IMAGE: ${{ steps.push.outputs.image }}
+        run: |
+          sed -i -E "s#ghcr\.io/[a-z0-9-]+/${IMAGE_NAME}:[0-9.]+#${IMAGE}#g" nextflow.config README.md
+          sed -i -E "s/^Version [0-9.]+$/Version ${VERSION}/" README.md
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Release v${VERSION}"
+          git tag "v${VERSION}"
+          git push --atomic origin HEAD:main "v${VERSION}"
+
+          {
+            echo "Container image: \`${IMAGE}\`"
+            echo
+            echo "| Package | Version | Commit |"
+            echo "|---|---|---|"
+            cat "${RUNNER_TEMP}/packages.md"
+          } > "${RUNNER_TEMP}/notes.md"
+          gh release create "v${VERSION}" --title "v${VERSION}" \
+            --notes-file "${RUNNER_TEMP}/notes.md" --generate-notes
