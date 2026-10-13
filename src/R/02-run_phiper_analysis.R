@@ -626,9 +626,7 @@ if(ALL){
                             view = "3d",
                             colour = group_col,
                             palette = group_palette)
-    htmlwidgets::saveWidget(p3d, file = file.path(out_dir, "beta_diversity",
-                                                "tsne3d_plot.html"),
-                            selfcontained = TRUE)
+    save_widget(p3d, file.path(out_dir, "beta_diversity", "tsne3d_plot.html"))
 
     # add group information to PCoA sample coordinates
     pcoa_res$sample_coords <- pcoa_res$sample_coords %>%
@@ -1358,10 +1356,8 @@ for (cmp_idx in seq_along(comparisons)) {
                             view = "3d",
                             colour = "group_char",
                             palette = group_palette)
-  htmlwidgets::saveWidget(p3d, file = file.path(out_dir, "beta_diversity",
-                                                "tsne3d_plot.html"),
-                          selfcontained = TRUE)
-  
+  save_widget(p3d, file.path(out_dir, "beta_diversity", "tsne3d_plot.html"))
+
   # CAPSCALE -----
   if (!is.null(paired_col)) {
     #library(permute)
@@ -1931,11 +1927,7 @@ for (cmp_idx in seq_along(comparisons)) {
       xaxis    = list(range = c(-2, 102), automargin = TRUE),
       yaxis    = list(range = c(-2, 102), automargin = TRUE)
     )
-    htmlwidgets::saveWidget(
-      p_inter,
-      file = paste0(out_name, "_interactive.html"),
-      selfcontained = TRUE
-    )
+    save_widget(p_inter, paste0(out_name, "_interactive.html"))
   }
   
   # ----------------------------------------------------------------------------
@@ -2172,11 +2164,10 @@ for (cmp_idx in seq_along(comparisons)) {
     p_inter <- p_inter %>% 
       plotly::layout(title = list(text = NULL))
 
-    htmlwidgets::saveWidget(
+    save_widget(
       p_inter,
-      file = file.path(out_dir, "DELTA_framework",
-                       paste0("significant_interactive_", taxon, "_forestplot.html")),
-      selfcontained = TRUE
+      file.path(out_dir, "DELTA_framework",
+                paste0("significant_interactive_", taxon, "_forestplot.html"))
     )
     
 
@@ -2515,11 +2506,7 @@ for (cmp_idx in seq_along(comparisons)) {
       yaxis    = list(range = c(-2, 102), automargin = TRUE)
     )
     
-    htmlwidgets::saveWidget(
-      p_inter,
-      file = paste0(file_prefix, "_scatter_interactive.html"),
-      selfcontained = TRUE
-    )
+    save_widget(p_inter, paste0(file_prefix, "_scatter_interactive.html"))
     
     ## ---------------- DELTA PLOT: conditional smooth ----------------
     use_smooth <- nrow(feature_data) >= 7

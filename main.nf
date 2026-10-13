@@ -3,6 +3,7 @@ nextflow.enable.dsl = 2
 include { CREATE_PHIPER_OBJECT } from './modules/local/create_phiper_object'
 include { RUN_PHIPER_ANALYSIS } from './modules/local/run_phiper_analysis'
 include { RENDER_PHIPER_REPORTS } from './modules/local/render_phiper_reports'
+include { BUILD_NOXREPORT } from './modules/local/build_noxreport'
 
 /*
  * PHIPER end-to-end workflow
@@ -315,6 +316,7 @@ Allowed values:
     log.info "  report BASE_DIR     : ${params.base_dir}/${params.project_name}/results"
     log.info "  results_dir         : ${params.base_dir}/${params.project_name}/${results_name}"
     log.info "  use_modules         : ${params.use_modules}"
+    log.info "  noxreport           : ${params.noxreport}"
     log.info "  container           : ${params.container ?: 'none'}"
 
     /*
@@ -391,4 +393,23 @@ Allowed values:
         params.delta_min_m_eff,
         rank_cols.join(',')
     )
+
+    /*
+     * noxreports book (optional)
+     *
+     * Created once in <base_dir>/<project>/<project>_book/ and re-rendered on
+     * later runs, so edits to the book are kept.
+     */
+
+    if (params.noxreport.toString().toBoolean()) {
+        BUILD_NOXREPORT(
+            RENDER_PHIPER_REPORTS.out.report_marker,
+            params.base_dir,
+            params.project_name,
+            params.metadata_file,
+            results_name,
+            params.use_modules,
+            params.delta_min_m_eff
+        )
+    }
 }

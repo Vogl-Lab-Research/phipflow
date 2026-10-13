@@ -610,6 +610,7 @@ This will run all group definitions found in `group_config.R`.
 | `--manual_comparison_file` | no | `NULL` | Optional manual comparison file inside `<project_name>/R/`. |
 | `--container` | no | set by `apptainer` profile | Path to the local `.sif` image. |
 | `--output_group_mode` | no | `group_name` | Controls output folder naming (`group_name` or `group_col`) |
+| `--noxreport` | no | `false` | Build the editable noxreports book after the reports (see step 4). |
 
 ---
 
@@ -686,6 +687,27 @@ Outputs:
 ```text
 <base_dir>/<project_name>/results/<group_col>/summary_report_<group_col>.html
 ```
+
+---
+
+### 4. noxreports book (optional, `--noxreport true`)
+
+Process:
+
+```text
+BUILD_NOXREPORT
+```
+
+Runs [noxreports](https://github.com/Polymerase3/noxreports) (installed in the container image): on the first run `noxreports init` creates an editable bookdown book for all groups of the project, then every run re-renders it with `noxreports render`. The book links to the results instead of copying them; `noxreports bundle <book>` zips it with the files it uses for sharing.
+
+Outputs:
+
+```text
+<base_dir>/<project_name>/<project_name>_book/            # report_config.yml, editable .Rmd chapters
+<base_dir>/<project_name>/<project_name>_book/_book/index.html
+```
+
+With a non-default `--results_name`, the book is `<project_name>_<results_name>_book/`.
 
 ---
 
@@ -845,7 +867,7 @@ The `Dockerfile` installs `phiper` and `phiperio` from their GitHub `main`, so t
 3. pushes it to GHCR as `ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:<version>`,
 4. commits the new image tag to `nextflow.config` and this README, tags `v<version>` and creates a GitHub release listing the installed `phiper`/`phiperio` versions and commits.
 
-It runs weekly (Tuesdays) and releases a patch version only if `phiper` or `phiperio` `main` has moved since the pinned image was built. After changing the `Dockerfile`, `docker/install_r_packages.R` or the pipeline, start it manually from the Actions tab ("Release" -> "Run workflow") and choose which version part to bump.
+It runs weekly (Tuesdays) and releases a patch version only if `phiper` or `phiperio` `main` has moved since the pinned image was built. `noxreports` is installed from its GitHub `main` too but is not tracked by the weekly check. After changing the `Dockerfile`, `docker/install_r_packages.R`, the pipeline or `noxreports`, start it manually from the Actions tab ("Release" -> "Run workflow") and choose which version part to bump.
 
 On LiSC, a nightly cron job (`~kolek/scripts/update_phipflow.py`) runs `git pull --ff-only` in `/lisc/data/scratch/ccr/CR_projects/phipflow`. If the pull changed the image in `nextflow.config`, it rebuilds `containers/phipflow-r4.6.0-quarto1.9.37.sif` from it.
 
