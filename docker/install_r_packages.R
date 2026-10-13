@@ -57,6 +57,7 @@ cran_pkgs <- c(
   "jsonlite",
   "kableExtra",
   "rmarkdown",
+  "bookdown",
   "quarto",
   "openxlsx",
 	
@@ -72,16 +73,19 @@ cran_pkgs <- c(
 cat("Installing CRAN packages...\n")
 install.packages(setdiff(cran_pkgs, rownames(installed.packages())))
 
-cat("Installing phiperio and phiper from GitHub...\n")
+cat("Installing phiperio, phiper and noxreports from GitHub...\n")
 pak::pak(c(
   "Polymerase3/phiperio",
-  "Polymerase3/phiper"
+  "Polymerase3/phiper",
+  "Polymerase3/noxreports"
 ))
 
 cat("Running package checks...\n")
 required <- c(
   "phiper",
   "phiperio",
+  "noxreports",
+  "bookdown",
   "duckdb",
   "dplyr",
   "ggplot2",

@@ -65,6 +65,10 @@ RUN wget -q "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUART
 COPY docker/install_r_packages.R /tmp/install_r_packages.R
 RUN Rscript /tmp/install_r_packages.R
 
+# noxreports command-line tool (also: Rscript -e 'noxreports::main()' ...)
+RUN ln -s "$(Rscript -e 'cat(system.file("exec", "noxreports", package = "noxreports"))')" \
+      /usr/local/bin/noxreports
+
 WORKDIR /work
 
 # Sanity checks at build time
@@ -73,4 +77,5 @@ RUN R --version \
     && pandoc --version \
     && Rscript -e "cat('phiper:', as.character(packageVersion('phiper')), '\n')" \
     && Rscript -e "cat('phiperio:', as.character(packageVersion('phiperio')), '\n')" \
-    && Rscript -e "stopifnot(requireNamespace('quarto', quietly = TRUE))"
+    && Rscript -e "stopifnot(requireNamespace('quarto', quietly = TRUE))" \
+    && noxreports help
