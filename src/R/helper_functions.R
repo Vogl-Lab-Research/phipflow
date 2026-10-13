@@ -257,6 +257,15 @@ save_rds_safe <- function(x, path) {
   saveRDS(x, file = path)
 }
 
+# save an htmlwidget as a single self-contained HTML file. saveWidget() builds
+# its dependencies in <stem>_files/ next to `file` but removes that dir relative
+# to the working directory, so it is left behind unless we remove it here.
+save_widget <- function(widget, file) {
+  htmlwidgets::saveWidget(widget, file = file, selfcontained = TRUE)
+  unlink(sub("\\.html$", "_files", file), recursive = TRUE)
+  invisible(file)
+}
+
 # select requested columns (base + extras), optionally drop rows with NA in
 # selected columns, collect to R, and save to RDS
 make_and_save <- function(data, out_path, extra_vars = NULL, drop_na = TRUE) {

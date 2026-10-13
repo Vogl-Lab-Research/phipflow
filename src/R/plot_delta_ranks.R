@@ -379,12 +379,12 @@ for (cmp_idx in seq_along(comparisons)) {
       label_x_gap_frac       = -0.3,
       label_y_offset        = -0.9
     )$plot
-    htmlwidgets::saveWidget(
-      p_inter,
-      file = file.path(out_dir, "DELTA_framework",
-                      paste0("significant_interactive_", taxon, "_forestplot.html")),
-      selfcontained = TRUE
-    )
+    html_file <- file.path(out_dir, "DELTA_framework",
+                           paste0("significant_interactive_", taxon, "_forestplot.html"))
+    htmlwidgets::saveWidget(p_inter, file = html_file, selfcontained = TRUE)
+    # saveWidget() leaves <stem>_files/ behind when the working directory is not
+    # the output dir; the HTML is self-contained, so drop it.
+    unlink(sub("\\.html$", "_files", html_file), recursive = TRUE)
   }
 }
 
