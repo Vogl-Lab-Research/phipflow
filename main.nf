@@ -132,8 +132,8 @@ Missing required parameter: --project_name
 Example:
   nextflow run main.nf \\
     -profile lisc \\
-    --project_name IBD-Berlin \\
-    --metadata_file IBD-Berlin_metadata.csv
+    --project_name <project> \\
+    --metadata_file <project>_metadata.csv
 """
     }
 
@@ -145,7 +145,7 @@ metadata_file should be the file name inside:
   <project_name>/Metadata/
 
 Example:
-  --metadata_file IBD-Berlin_metadata.csv
+  --metadata_file <project>_metadata.csv
 """
     }
 

@@ -22,7 +22,7 @@ execute:
   warning: false
   message: false
 params:
-  base_dir: null # passed at runtime, e.g. "SAR/results"
+  base_dir: null # passed at runtime, e.g. "<project>/results"
   group_col: null # output group folder name; kept for backwards compatibility
   top_n: 500
   tables_open: false
