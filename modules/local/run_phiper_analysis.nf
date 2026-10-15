@@ -14,7 +14,6 @@ process RUN_PHIPER_ANALYSIS {
     val force
     val output_group_mode
     val workflow_src_dir
-    val peptide_library
     val rank_cols
     val aggregate_stat
     val delta_min_m_eff
@@ -56,7 +55,6 @@ process RUN_PHIPER_ANALYSIS {
     echo "Active group           : ${active_group}"
     echo "Output group mode      : ${output_group_mode}"
     echo "Parquet                : ${parquet_name}"
-    echo "Peptide library        : ${peptide_library}"
     echo "ALL                    : ${all_flag}"
     echo "DEFAULT_LONGITUDINAL   : ${default_longitudinal}"
     echo "MANUAL_COMPARISON_FILE : ${manual_comparison_file}"
@@ -78,7 +76,6 @@ process RUN_PHIPER_ANALYSIS {
       PARQUET_NAME="${parquet_name}" \\
       MANUAL_COMPARISON_FILE="${manual_comparison_file}" \\
       PHIPFLOW_SRC="${workflow_src_dir}" \\
-      PEPTIDE_LIBRARY="${peptide_library}" \\
       RANK_COLS="${rank_cols}" \\
       AGGREGATE_STAT="${aggregate_stat}" \\
       DELTA_MIN_M_EFF="${delta_min_m_eff}" \\

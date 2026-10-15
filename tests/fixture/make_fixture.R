@@ -6,8 +6,9 @@
 #   Rscript tests/fixture/make_fixture.R
 #
 # The generated files are committed, so this only needs to be re-run when the
-# fixture design changes. Peptide IDs are taken from peplib/peptide_library.rds
-# so that peptide-library lookups and DELTA taxon aggregation have real strata.
+# fixture design changes. Peptide IDs are taken from phiperio's combined
+# peptide library so that peptide-library lookups and DELTA taxon aggregation
+# have real strata.
 #
 # Design:
 #   24 subjects x 2 timepoints (BL, FU) = 48 samples, named R01..R48.
@@ -23,7 +24,9 @@ set.seed(20261005)
 project_name <- "CI-Test"
 out_dir      <- file.path("tests", "fixture", project_name)
 
-peplib <- as.data.frame(readRDS(file.path("peplib", "peptide_library.rds")))
+peplib <- as.data.frame(
+  dplyr::collect(phiperio::get_peptide_library("combined"))
+)
 
 # ------------------------------------------------------------------------------
 # Peptides

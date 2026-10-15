@@ -150,7 +150,6 @@ MANUAL_COMPARISON_FILE <- parse_nullable(
 )
 
 PHIPFLOW_SRC <- get_kv_arg("PHIPFLOW_SRC", required = TRUE)
-PEPTIDE_LIBRARY <- get_kv_arg("PEPTIDE_LIBRARY", required = TRUE)
 RANK_COLS <- parse_csv(
   get_kv_arg(
     "RANK_COLS",
@@ -210,7 +209,6 @@ if (!is.null(MANUAL_COMPARISON_FILE) && nzchar(MANUAL_COMPARISON_FILE)) {
 }
 
 helper_file <- file.path(PHIPFLOW_SRC, "helper_functions.R")
-peptide_library_path <- normalizePath(PEPTIDE_LIBRARY, mustWork = FALSE)
 
 message("PROJECT_DIR: ", project_dir)
 message("ACTIVE_GROUP: ", ACTIVE_GROUP)
@@ -221,7 +219,6 @@ message("data_long_path: ", data_long_path)
 message("results_dir: ", results_dir)
 message("group_config_file: ", group_config_file)
 message("PHIPFLOW_SRC: ", PHIPFLOW_SRC)
-message("PEPTIDE_LIBRARY: ", peptide_library_path)
 message("helper_file: ", helper_file)
 message("N_CORES: ", N_CORES)
 message("IO_CORES: ", IO_CORES)
@@ -292,15 +289,13 @@ withr::with_preserve_seed({
 # ------------------------------------------------------------------------------
 # Results directory + peptide library
 # ------------------------------------------------------------------------------
-# The peptide library is now a workflow-level resource stored in:
-#   phipflow/peplib/peptide_library.rds
-#
-# It is required and is not created by this analysis script.
+# The peptide library is the one phiperio attached to ps: the libraries
+# (combined, human_proteome, icam) the peptide IDs belong to, detected from
+# their prefixes.
 # ------------------------------------------------------------------------------
 dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
 
-message("Using workflow peptide library RDS: ", peptide_library_path)
-peplib <- as.data.frame(readRDS(peptide_library_path))
+peplib <- as.data.frame(dplyr::collect(ps$peptide_library))
 
 # ------------------------------------------------------------------------------
 # Analysis setup
