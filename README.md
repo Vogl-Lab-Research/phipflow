@@ -3,7 +3,7 @@
 [![CI](https://github.com/Vogl-Lab-Research/phipflow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Vogl-Lab-Research/phipflow/actions/workflows/ci.yml)
 [![phiper@main compatibility](https://github.com/Vogl-Lab-Research/phipflow/actions/workflows/upstream-compat.yml/badge.svg?branch=main)](https://github.com/Vogl-Lab-Research/phipflow/actions/workflows/upstream-compat.yml)
 
-Version 1.3.0
+Version 1.4.0
 
 `phipflow` is a Nextflow DSL2 wrapper for running the PHIPER analysis workflow on a server.
 
@@ -24,8 +24,8 @@ For production runs, use the **LiSC + Apptainer** profile:
 ```bash
 nextflow run main.nf \
   -profile lisc,apptainer \
-  --project_name IBD-Berlin \
-  --metadata_file IBD-Berlin_metadata.csv \
+  --project_name <project> \
+  --metadata_file <project>_metadata.csv \
   --group_cols group_test \
   -resume
 ```
@@ -48,13 +48,13 @@ A typical setup on LiSC is:
 /lisc/data/scratch/ccr/CR_projects/
 ├── phiper/
 │   ├── renv/
-│   ├── IBD-Berlin/
+│   ├── <project>/
 │   │   ├── Data/
 │   │   │   ├── exist.csv
 │   │   │   ├── fold.csv
-│   │   │   └── IBD-Berlin.parquet
+│   │   │   └── <project>.parquet
 │   │   ├── Metadata/
-│   │   │   └── IBD-Berlin_metadata.csv
+│   │   │   └── <project>_metadata.csv
 │   │   ├── R/
 │   │   │   └── group_config.R
 │   │   └── results/
@@ -117,12 +117,12 @@ Each PHIPER project should have this layout:
 For example:
 
 ```text
-/lisc/data/scratch/ccr/CR_projects/phiper/IBD-Berlin/
+/lisc/data/scratch/ccr/CR_projects/phiper/<project>/
 ├── Data/
 │   ├── exist.csv
 │   └── fold.csv
 ├── Metadata/
-│   └── IBD-Berlin_metadata.csv
+│   └── <project>_metadata.csv
 ├── R/
 │   └── group_config.R
 └── results/
@@ -200,9 +200,9 @@ This is the default behavior.
 The metadata file should be in **long/sample-level format**:
 
 ```text
-SampleName,Sex,Age,group_test,group_IBD,subject_id,Smoker,Timepoint,Smoker_Timepoint
+SampleName,Sex,Age,group_test,group_subtype,subject_id,Smoker,Timepoint,Smoker_Timepoint
 R001,F,34,Control,Control,S01,Smoker,BL,Smoker_BL
-R002,F,34,Disease,IBD,S01,Smoker,FU,Smoker_FU
+R002,F,34,Disease,Subtype_A,S01,Smoker,FU,Smoker_FU
 R003,M,41,Control,Control,S02,NonSmoker,BL,NonSmoker_BL
 ```
 
@@ -266,8 +266,8 @@ Example:
 ```bash
 nextflow run main.nf \
   -profile lisc,apptainer \
-  --project_name IBD-Berlin \
-  --metadata_file IBD-Berlin_metadata.csv \
+  --project_name <project> \
+  --metadata_file <project>_metadata.csv \
   --group_cols Smoker_Timepoint \ # this can be named different than the group_col "Smoker_Timepoint" in metadata but for consistency it's better to name it the same
   -resume
 ```
@@ -307,8 +307,8 @@ or for a real project:
 ```bash
 nextflow run main.nf \
   -profile lisc,apptainer \
-  --project_name IBD-Berlin \
-  --metadata_file IBD-Berlin_metadata.csv \
+  --project_name <project> \
+  --metadata_file <project>_metadata.csv \
   --group_cols group_test \
   -resume
 ```
@@ -354,8 +354,8 @@ or:
 ```bash
 nextflow run main.nf \
   -profile lisc \
-  --project_name IBD-Berlin \
-  --metadata_file IBD-Berlin_metadata.csv \
+  --project_name <project> \
+  --metadata_file <project>_metadata.csv \
   --group_cols group_test \
   -resume
 ```
@@ -383,7 +383,7 @@ The large `.sif` file is not directly given in this GitHub repo. Instead, it can
 The Docker image is:
 
 ```text
-ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.3.0
+ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.4.0
 ```
 
 Build the Apptainer/SIF image:
@@ -393,14 +393,14 @@ cd /lisc/data/scratch/ccr/CR_projects/phipflow/containers
 
 
 apptainer build phipflow-r4.6.0-quarto1.9.37.sif \
-  docker://ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.3.0
+  docker://ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.4.0
 ```
 
 If the file already exists and you want to rebuild it:
 
 ```bash
 apptainer build --force phipflow-r4.6.0-quarto1.9.37.sif \
-  docker://ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.3.0
+  docker://ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.4.0
 ```
 
 Test the image:
@@ -442,13 +442,8 @@ Run the default test case:
 nextflow run main.nf -profile lisc,apptainer,test -resume
 ```
 
-The `test` profile uses:
-
-```groovy
-params.project_name  = 'IBD-Berlin'
-params.metadata_file = 'IBD-Berlin_metadata.csv'
-params.group_cols    = 'group_test'
-```
+The `test` profile runs a small LiSC test project with
+`group_cols = 'group_test'` (see the `test` profile in `nextflow.config`).
 
 If this test succeeds, the workflow, SLURM profile, Apptainer image, and project structure are working.
 
@@ -461,8 +456,8 @@ Example using the recommended Apptainer profile:
 ```bash
 nextflow run main.nf \
   -profile lisc,apptainer \
-  --project_name IBD-Berlin \
-  --metadata_file IBD-Berlin_metadata.csv \
+  --project_name <project> \
+  --metadata_file <project>_metadata.csv \
   --group_cols group_test \
   -resume
 ```
@@ -472,8 +467,8 @@ Example using LiSC modules and the `base_dir` renv environment:
 ```bash
 nextflow run main.nf \
   -profile lisc \
-  --project_name IBD-Berlin \
-  --metadata_file IBD-Berlin_metadata.csv \
+  --project_name <project> \
+  --metadata_file <project>_metadata.csv \
   --group_cols group_test \
   -resume
 ```
@@ -489,8 +484,8 @@ Pass comma-separated group columns:
 ```bash
 nextflow run main.nf \
   -profile lisc,apptainer \
-  --project_name IBD-Berlin \
-  --metadata_file IBD-Berlin_metadata.csv \
+  --project_name <project> \
+  --metadata_file <project>_metadata.csv \
   --group_cols group_test,group_combined,group_3 \
   -resume
 ```
@@ -544,8 +539,8 @@ If you want to analyze several groups but render reports only for a subset, use 
 ```bash
 nextflow run main.nf \
   -profile lisc,apptainer \
-  --project_name IBD-Berlin \
-  --metadata_file IBD-Berlin_metadata.csv \
+  --project_name <project> \
+  --metadata_file <project>_metadata.csv \
   --group_cols group_test,group_combined,group_3 \
   --report_group_cols group_test,group_combined \
   -resume
@@ -560,7 +555,7 @@ Reports are written to:
 For example:
 
 ```text
-/lisc/data/scratch/ccr/CR_projects/phiper/IBD-Berlin/results/group_test/summary_report_group_test.html
+/lisc/data/scratch/ccr/CR_projects/phiper/<project>/results/group_test/summary_report_group_test.html
 ```
 
 ---
@@ -584,8 +579,8 @@ Example:
 ```bash
 nextflow run main.nf \
   -profile lisc,apptainer \
-  --project_name IBD-Berlin \
-  --metadata_file IBD-Berlin_metadata.csv \
+  --project_name <project> \
+  --metadata_file <project>_metadata.csv \
   -resume
 ```
 
@@ -772,8 +767,8 @@ module load Nextflow
 
 nextflow run main.nf \
   -profile lisc,apptainer \
-  --project_name IBD-Berlin \
-  --metadata_file IBD-Berlin_metadata.csv \
+  --project_name <project> \
+  --metadata_file <project>_metadata.csv \
   --group_cols group_test \
   -resume
 ```
@@ -813,8 +808,8 @@ module load Nextflow
 
 nextflow run main.nf \
   -profile lisc,apptainer \
-  --project_name IBD-Berlin \
-  --metadata_file IBD-Berlin_metadata.csv \
+  --project_name <project> \
+  --metadata_file <project>_metadata.csv \
   --group_cols group_test,group_combined \
   -resume
 ```
@@ -842,8 +837,8 @@ Use `-resume` to continue from completed steps:
 ```bash
 nextflow run main.nf \
   -profile lisc,apptainer \
-  --project_name IBD-Berlin \
-  --metadata_file IBD-Berlin_metadata.csv \
+  --project_name <project> \
+  --metadata_file <project>_metadata.csv \
   --group_cols group_test \
   -resume
 ```
@@ -857,7 +852,7 @@ If the parquet object already exists and the corresponding process hash has not 
 The Apptainer image is built from this GHCR Docker image:
 
 ```text
-ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.3.0
+ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.4.0
 ```
 
 The `Dockerfile` installs `phiper` and `phiperio` from their GitHub `main`, so the image has to be rebuilt to pick up upstream changes. The `Release` GitHub Actions workflow does this:

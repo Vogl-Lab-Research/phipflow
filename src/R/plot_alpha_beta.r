@@ -28,7 +28,7 @@ MAX_GB <- 40
 ACTIVE_GROUP <- "group_test"
 DEFAULT_LONGITUDINAL <- FALSE
 ALL <- TRUE
-PROJECT_DIR <- "IBD-Berlin"
+PROJECT_DIR <- "<project>"
 PARQUET_NAME <- paste0(PROJECT_DIR, ".parquet")
 FORCE <- FALSE
 
