@@ -75,10 +75,12 @@ jobs:
           base_image=$(nextflow config -profile docker -flat | sed -n "s/^params.container = '\(.*\)'$/\1/p")
           echo "Base image: ${base_image}"
 
+          # phiper first, then phiperio on top: phiper's Remotes ask for
+          # phiperio main, which conflicts with a phiperio ref in the same call
           docker run --name phipflow-latest \
             -e GITHUB_PAT -e PHIPER_REF -e PHIPERIO_REF \
             "${base_image}" \
-            Rscript -e 'pak::pak(c(Sys.getenv("PHIPERIO_REF"), Sys.getenv("PHIPER_REF")), ask = FALSE)'
+            Rscript -e 'pak::pak(Sys.getenv("PHIPER_REF"), ask = FALSE); pak::pak(Sys.getenv("PHIPERIO_REF"), ask = FALSE)'
 
           # drop the token and restore the base image's default command
           docker commit \
