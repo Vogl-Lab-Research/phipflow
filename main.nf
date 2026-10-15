@@ -175,7 +175,6 @@ Allowed values:
 
     def workflow_src_dir  = "${projectDir}/src/R"
     def workflow_template = "${projectDir}/src/template/phiper_summary_report.qmd"
-    def peptide_library   = params.peptide_library ?: "${projectDir}/peplib/peptide_library.rds"
 
     /*
      * Project-specific paths.
@@ -192,12 +191,6 @@ Allowed values:
     def exist_path         = file("${params.base_dir}/${params.project_name}/Data/${params.exist_file}")
     def fold_path          = file("${params.base_dir}/${params.project_name}/Data/${params.fold_file}")
     def group_config_path  = file("${params.base_dir}/${params.project_name}/R/group_config.R")
-
-    /*
-     * Optional peptide library path, defaulting to phipflow/peplib/peptide_library.rds
-     */
-
-    def peptide_library_path = file(peptide_library)
 
     /*
      * Reusable R scripts and QMD template live in phipflow/src.
@@ -223,7 +216,6 @@ Allowed values:
         'Exist matrix'               : exist_path,
         'Fold matrix'                : fold_path,
         'group_config.R'             : group_config_path,
-        'Peptide library RDS'        : peptide_library_path,
         '01-create_phiper_object.R'  : r_create_path,
         '02-run_phiper_analysis.R'   : r_analysis_path,
         '03-render_phiper_reports.R' : r_render_path,
@@ -309,7 +301,6 @@ Allowed values:
     log.info "  group_cols          : ${group_cols.join(', ')}"
     log.info "  report_group_cols   : ${report_group_cols.join(', ')}"
     log.info "  output_group_mode   : ${output_group_mode}"
-    log.info "  peptide_library     : ${peptide_library}"
     log.info "  rank_cols          : ${rank_cols.join(', ')}"
     log.info "  aggregate_stat     : ${aggregate_stat}"
     log.info "  delta_min_m_eff   : ${delta_min_m_eff}"
@@ -363,7 +354,6 @@ Allowed values:
         params.force,
         output_group_mode,
         workflow_src_dir,
-        peptide_library,
         rank_cols.join(','),
         aggregate_stat,
         params.delta_min_m_eff,
