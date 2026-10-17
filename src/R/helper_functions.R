@@ -328,6 +328,18 @@ downsample_for_static <- function(df, prop = 0.1, seed = 1L) {
 }
 
 
+# Logical flag columns (is_auto, is_EBV, ...) used as rank columns become one
+# feature named after the flag, made of the peptides where the flag is TRUE.
+# Without this a flag splits into a TRUE and a FALSE feature.
+flag_ranks_as_features <- function(peplib, rank_cols) {
+  flag_cols <- intersect(rank_cols, names(peplib)[vapply(peplib, is.logical, logical(1))])
+  for (col in flag_cols) {
+    peplib[[col]] <- ifelse(peplib[[col]] %in% TRUE, col, NA_character_)
+  }
+  peplib
+}
+
+
 get_binary_and_ids <- function(feature, peplib, tax_cols,
                                peptide_col = "peptide_id") {
 

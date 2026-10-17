@@ -296,6 +296,8 @@ withr::with_preserve_seed({
 dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
 
 peplib <- as.data.frame(dplyr::collect(ps$peptide_library))
+# Library passed to the POP and DELTA rank analyses.
+peplib_ranks <- flag_ranks_as_features(peplib, RANK_COLS)
 
 # ------------------------------------------------------------------------------
 # Analysis setup
@@ -1820,7 +1822,7 @@ for (cmp_idx in seq_along(comparisons)) {
     group_cols        = "group_char",
     rank_cols         = RANK_COLS,
     paired            = paired_prev,
-    peptide_library   = peplib
+    peptide_library   = peplib_ranks
   )
   rank_tbl <- extract_tbl(prev_res_rank)
   
@@ -1954,7 +1956,7 @@ for (cmp_idx in seq_along(comparisons)) {
     exist_col          = "exist",
     rank_cols          = RANK_COLS,
     group_cols         = "group_char",
-    peptide_library    = peplib,
+    peptide_library    = peplib_ranks,
     B_permutations     = 150000L,
     weight_mode        = "equal", #"n_eff_sqrt",
     stat_mode          = stat_mode,

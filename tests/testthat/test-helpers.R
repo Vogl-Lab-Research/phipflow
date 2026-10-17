@@ -144,3 +144,20 @@ test_that("longitudinal group column is split at the last underscore", {
     "group_char"
   )
 })
+
+# ------------------------------------------------------------------------------
+# flag_ranks_as_features
+# ------------------------------------------------------------------------------
+test_that("flag rank columns become one feature named after the flag", {
+  peplib <- data.frame(
+    peptide_id = c("p1", "p2", "p3"),
+    genus      = c("A", "B", NA),
+    is_auto    = c(TRUE, FALSE, NA),
+    is_EBV     = c(TRUE, TRUE, FALSE)
+  )
+  out <- flag_ranks_as_features(peplib, c("genus", "is_auto"))
+
+  expect_equal(out$is_auto, c("is_auto", NA, NA))
+  expect_equal(out$genus, peplib$genus)
+  expect_equal(out$is_EBV, peplib$is_EBV)
+})
