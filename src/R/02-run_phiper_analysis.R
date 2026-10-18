@@ -298,6 +298,14 @@ dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
 peplib <- as.data.frame(dplyr::collect(ps$peptide_library))
 # Library passed to the POP and DELTA rank analyses.
 peplib_ranks <- flag_ranks_as_features(peplib, RANK_COLS)
+# Library passed to profile_plot(), which needs pos and len_seq as numbers.
+# The DELTA framework casts peplib to character for compute_delta(), so the
+# copy is taken here, before the first comparison.
+peplib_pos <- peplib[intersect(
+  c("peptide_id", "protein_seq_id", "pos", "aa_seq", "len_seq",
+    "taxon_with_protein_unique_annotation"),
+  names(peplib)
+)]
 
 # ------------------------------------------------------------------------------
 # Analysis setup
@@ -2376,7 +2384,8 @@ for (cmp_idx in seq_along(comparisons)) {
                                group1,
                                group2,
                                feature_data,
-                               out_dir) {
+                               out_dir,
+                               rank = NA_character_) {
     if (is.null(feature_data) || nrow(feature_data) == 0L) {
       message("Skipping ", feature_name, " (no peptide data)")
       return(invisible(NULL))
@@ -2418,7 +2427,55 @@ for (cmp_idx in seq_along(comparisons)) {
     
     feature_data_static <- downsample_for_static(feature_data, prop = 1, seed = 1L)
     bg_df_static <- downsample_for_static(bg_df, prop = 1, seed = BG_SEED)
-    
+
+    ## ---------------- PROFILE PLOT STATIC ----------------
+    # Prevalence of every library peptide along the protein, with the longest
+    # run of overlapping hit peptides shaded. Only for protein features: a
+    # taxon covers hundreds of proteins, which is one panel each.
+    if (identical(as.character(rank), "protein_seq_id")) {
+      svglite::svglite(
+        paste0(file_prefix, "_profileplot_static.svg"),
+        width = 20/2.54,
+        height = 20/2.54,
+        bg = "white"
+      )
+
+      p_profile_static <- tryCatch(
+        {
+          phiper::profile_plot(
+            prev_tbl      = pep_tbl,
+            proteins      = as.character(feature_name),
+            groups        = as.character(c(group1, group2)),
+            peplib        = peplib_pos,
+            delta_tbl     = res_filtered,
+            custom_colors = group_palette[as.character(c(group1, group2))]
+          ) +
+            ggplot2::theme(
+              text        = ggplot2::element_text(family = "Montserrat"),
+              title       = element_text(size = 12),
+              axis.text   = element_text(size = 12),
+              axis.title  = element_text(size = 12),
+              legend.text = element_text(size = 12)
+            )
+        },
+        error = function(e) {
+          message(
+            "Profile plot failed for ", feature_name,
+            " (", group1, " vs ", group2, "): ", conditionMessage(e)
+          )
+          ggplot2::ggplot() +
+            ggplot2::theme_void() +
+            ggplot2::ggtitle(
+              paste0("No profile plot for ", feature_name, "\n(", group1, " vs ",
+                     group2, ")")
+            ) +
+            ggplot2::theme(text = ggplot2::element_text(family = "Montserrat"))
+        }
+      )
+      print(p_profile_static)
+      dev.off()
+    }
+
     ## ---------------- SCATTER STATIC ----------------
     svglite::svglite(
       paste0(file_prefix, "_scatter_static.svg"),
@@ -2682,7 +2739,8 @@ for (cmp_idx in seq_along(comparisons)) {
     group2       <- as.character(res_with_pep$pep_tbl_subset[[i]]$group2[1])
     feature_data <- res_with_pep$pep_tbl_subset[[i]]
     message("Plotting [", i, "/", n_features, "]: ", feature_name)
-    plot_feature_all(feature_name, group1, group2, feature_data, out_dir)
+    plot_feature_all(feature_name, group1, group2, feature_data, out_dir,
+                     rank = res_with_pep$rank[i])
   }
 }
 
