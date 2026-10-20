@@ -3,7 +3,7 @@
 [![CI](https://github.com/Vogl-Lab-Research/phipflow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Vogl-Lab-Research/phipflow/actions/workflows/ci.yml)
 [![phiper@main compatibility](https://github.com/Vogl-Lab-Research/phipflow/actions/workflows/upstream-compat.yml/badge.svg?branch=main)](https://github.com/Vogl-Lab-Research/phipflow/actions/workflows/upstream-compat.yml)
 
-Version 1.5.1
+Version 1.5.2
 
 `phipflow` is a Nextflow DSL2 wrapper for running the PHIPER analysis workflow on a server.
 
@@ -383,7 +383,7 @@ The large `.sif` file is not directly given in this GitHub repo. Instead, it can
 The Docker image is:
 
 ```text
-ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.5.1
+ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.5.2
 ```
 
 Build the Apptainer/SIF image:
@@ -393,14 +393,14 @@ cd /lisc/data/scratch/ccr/CR_projects/phipflow/containers
 
 
 apptainer build phipflow-r4.6.0-quarto1.9.37.sif \
-  docker://ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.5.1
+  docker://ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.5.2
 ```
 
 If the file already exists and you want to rebuild it:
 
 ```bash
 apptainer build --force phipflow-r4.6.0-quarto1.9.37.sif \
-  docker://ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.5.1
+  docker://ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.5.2
 ```
 
 Test the image:
@@ -852,7 +852,7 @@ If the parquet object already exists and the corresponding process hash has not 
 The Apptainer image is built from this GHCR Docker image:
 
 ```text
-ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.5.1
+ghcr.io/vogl-lab-research/phipflow-r4.6.0-quarto1.9.37:1.5.2
 ```
 
 The `Dockerfile` installs `phiper` and `phiperio` from their GitHub `main`, so the image has to be rebuilt to pick up upstream changes. The `Release` GitHub Actions workflow does this:
