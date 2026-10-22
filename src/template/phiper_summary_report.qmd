@@ -578,7 +578,7 @@ get_delta_rank_table <- function(delta_dir, rank_name, top_n = 12) {
 
   top_tbl_file <- file_or_na(
     delta_dir,
-    paste0("delta_table_m_eff_", params$min_eff,"_TOP_", rank_name, "_sort_by_maxDelta-Stouffer.csv")
+    paste0("delta_table_m_eff_", params$min_eff,"TOP_", rank_name, "_sort_by_maxDelta-Stouffer.csv")
   )
 
   if (!is.na(top_tbl_file)) {
