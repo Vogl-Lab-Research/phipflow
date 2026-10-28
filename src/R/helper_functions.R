@@ -339,6 +339,44 @@ flag_ranks_as_features <- function(peplib, rank_cols) {
   peplib
 }
 
+# ------------------------------------------------------------------------------
+# filter_peptide_library
+# ------------------------------------------------------------------------------
+# Keep only peptides whose library annotation matches `peptide_filter`.
+# `peptide_filter` is a string of R expressions on library columns; several
+# expressions separated by ";" are combined with AND (as in dplyr::filter).
+# Rows where an expression is NA are dropped, so `species != 'X'` also drops
+# peptides without a species; use `is.na(species) | species != 'X'` to keep them.
+filter_peptide_library <- function(peplib, peptide_filter = NULL) {
+  if (is.null(peptide_filter) || !nzchar(trimws(peptide_filter))) {
+    return(peplib)
+  }
+
+  exprs <- tryCatch(
+    rlang::parse_exprs(peptide_filter),
+    error = function(e) {
+      stop("Could not parse PEPTIDE_FILTER: ", peptide_filter,
+           "\n", conditionMessage(e), call. = FALSE)
+    }
+  )
+
+  used_cols <- unique(unlist(lapply(exprs, all.vars)))
+  unknown <- setdiff(used_cols, names(peplib))
+  if (length(unknown) > 0) {
+    stop("PEPTIDE_FILTER uses unknown peptide library columns: ",
+         paste(unknown, collapse = ", "),
+         "\nAvailable columns: ", paste(names(peplib), collapse = ", "),
+         call. = FALSE)
+  }
+
+  out <- dplyr::filter(peplib, !!!exprs)
+
+  if (nrow(out) == 0L) {
+    stop("PEPTIDE_FILTER removed all peptides: ", peptide_filter, call. = FALSE)
+  }
+
+  out
+}
 
 get_binary_and_ids <- function(feature, peplib, tax_cols,
                                peptide_col = "peptide_id") {

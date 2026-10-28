@@ -19,6 +19,7 @@ process RUN_PHIPER_ANALYSIS {
     val delta_min_m_eff
     val results_name
     val use_modules
+    val peptide_filter
   
     output:
     path "run_phiper_analysis.${project_name}.${active_group}.done", emit: analysis_marker
@@ -62,6 +63,7 @@ process RUN_PHIPER_ANALYSIS {
     echo "Use modules            : ${use_modules}"
     echo "N_CORES                : ${task.cpus}"
     echo "MAX_GB                 : \${max_gb}"
+    echo "PEPTIDE_FILTER         : ${peptide_filter}"
 
     Rscript --vanilla "${workflow_src_dir}/02-run_phiper_analysis.R" \\
       N_CORES="${task.cpus}" \\
@@ -79,7 +81,8 @@ process RUN_PHIPER_ANALYSIS {
       RANK_COLS="${rank_cols}" \\
       AGGREGATE_STAT="${aggregate_stat}" \\
       DELTA_MIN_M_EFF="${delta_min_m_eff}" \\
-      RESULTS_NAME="${results_name}"
+      RESULTS_NAME="${results_name}" \\
+      PEPTIDE_FILTER="${peptide_filter}"
 
     echo "Checking result directory: \${results_dir}"
     echo "PHIPER analysis finished for active group: ${active_group}"
