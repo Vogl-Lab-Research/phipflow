@@ -7,7 +7,7 @@ process BUILD_NOXREPORT {
     path report_marker
     val base_dir
     val project_name
-    val metadata_file
+    val metadata_path
     val results_name
     val use_modules
     val delta_min_m_eff
@@ -36,7 +36,7 @@ process BUILD_NOXREPORT {
       echo "Creating noxreports book: \${book_dir}"
       Rscript --vanilla -e 'noxreports::main()' init \\
         --results "\${project_dir}/${results_name}" \\
-        --metadata "\${project_dir}/Metadata/${metadata_file}" \\
+        --metadata "${metadata_path}" \\
         --project "${project_name}" \\
         --min-m-eff "${delta_min_m_eff}" \\
         --out "\${book_dir}"

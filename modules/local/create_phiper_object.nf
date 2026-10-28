@@ -6,9 +6,9 @@ process CREATE_PHIPER_OBJECT {
     input:
     val base_dir
     val project_name
-    val exist_file
-    val fold_file
-    val metadata_file
+    path exist_csv
+    path fold_csv
+    path metadata_csv
     val out_parquet
     val sample_prefix
     val peptide_col
@@ -41,9 +41,9 @@ process CREATE_PHIPER_OBJECT {
     echo "Running PHIPER object creation"
     echo "Base dir       : ${base_dir}"
     echo "Project        : ${project_name}"
-    echo "Exist file     : ${exist_file}"
-    echo "Fold file      : ${fold_file}"
-    echo "Metadata file  : ${metadata_file}"
+    echo "Exist file     : ${exist_csv}"
+    echo "Fold file      : ${fold_csv}"
+    echo "Metadata file  : ${metadata_csv}"
     echo "Output parquet : ${out_parquet}"
     echo "Workflow src   : ${workflow_src_dir}"
     echo "Use modules    : ${use_modules}"
@@ -51,9 +51,9 @@ process CREATE_PHIPER_OBJECT {
     Rscript --vanilla "${workflow_src_dir}/01-create_phiper_object.R" \\
       --base_dir "${base_dir}" \\
       --project_name "${project_name}" \\
-      --exist_file "${exist_file}" \\
-      --fold_file "${fold_file}" \\
-      --metadata_file "${metadata_file}" \\
+      --exist_path "\${workdir}/${exist_csv}" \\
+      --fold_path "\${workdir}/${fold_csv}" \\
+      --metadata_path "\${workdir}/${metadata_csv}" \\
       --out_parquet "${out_parquet}" \\
       --sample_prefix "${sample_prefix}" \\
       --peptide_col "${peptide_col}" \\
