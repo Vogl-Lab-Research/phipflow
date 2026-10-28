@@ -130,6 +130,19 @@ For example:
 
 The file `<project_name>/R/group_config.R` defines the PHIPER group configurations used by the analysis.
 
+`Data/` and `Metadata/` are the default locations. The input files can live anywhere else if you pass full paths:
+
+```groovy
+params {
+    project_name  = 'MyProject'
+    exist_path    = '/data/xyz/exist_matrix.csv'
+    fold_path     = '/data/xyz/fold_matrix.csv'
+    metadata_path = '/data/xyz/meta/samples.csv'
+}
+```
+
+Each `*_path` is optional. Any that are not set fall back to `Data/<exist_file>`, `Data/<fold_file>` and `Metadata/<metadata_file>`. `R/group_config.R` must still be inside the project folder, and the parquet and results are still written there.
+
 ---
 
 ## Input data format
@@ -594,11 +607,14 @@ This will run all group definitions found in `group_config.R`.
 |---|---:|---|---|
 | `--base_dir` | no | `/lisc/data/scratch/ccr/CR_projects/phiper` | Root directory containing PHIPER projects. |
 | `--project_name` | yes | `null` | Project folder name inside `base_dir`. |
-| `--metadata_file` | yes | `null` | Metadata file inside `<project_name>/Metadata/`. |
+| `--metadata_file` | yes, unless `--metadata_path` is set | `null` | Metadata file inside `<project_name>/Metadata/`. |
 | `--group_cols` | no | `null` | Comma-separated group columns to analyze. If null, groups are discovered from `group_config.R`. |
 | `--report_group_cols` | no | `null` | Comma-separated group columns to render. If null, uses `group_cols`. |
 | `--exist_file` | no | `exist.csv` | Enrichment matrix inside `<project_name>/Data/`. |
 | `--fold_file` | no | `fold.csv` | Fold-change matrix inside `<project_name>/Data/`. |
+| `--exist_path` | no | `null` | Full path to the enrichment matrix. Overrides `Data/<exist_file>`. |
+| `--fold_path` | no | `null` | Full path to the fold-change matrix. Overrides `Data/<fold_file>`. |
+| `--metadata_path` | no | `null` | Full path to the metadata file. Overrides `Metadata/<metadata_file>`. |
 | `--out_parquet` | no | `<project_name>.parquet` | Output parquet file created in `<project_name>/Data/`. |
 | `--all` | no | `FALSE` | Passed to `02-run_phiper_analysis.R`. |
 | `--default_longitudinal` | no | `FALSE` | Passed to `02-run_phiper_analysis.R`. |
