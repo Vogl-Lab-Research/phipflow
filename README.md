@@ -622,8 +622,33 @@ This will run all group definitions found in `group_config.R`.
 | `--container` | no | set by `apptainer` profile | Path to the local `.sif` image. |
 | `--output_group_mode` | no | `group_name` | Controls output folder naming (`group_name` or `group_col`) |
 | `--noxreport` | no | `false` | Build the editable noxreports book after the reports (see step 4). |
+| `--peptide_filter` | no | `null` | Restrict the analysis to selected peptides (see *Filtering peptides*). |
 
 ---
+
+## Filtering peptides
+
+By default every peptide in the exist matrix is analysed. `peptide_filter` restricts the analysis to peptides whose peptide-library annotation matches one or more R expressions:
+
+```groovy
+params {
+    peptide_filter = "species == 'Homo sapiens'"                 // human peptides only
+    // peptide_filter = "species != 'Homo sapiens'"              // everything except human
+    // peptide_filter = "is_EBV"                                 // logical flag columns
+    // peptide_filter = ["species != 'Homo sapiens'", "is_EBV"]  // list = AND
+    // peptide_filter = "is_EBV | is_auto"                       // OR within one entry
+    // peptide_filter = "genus %in% c('Bacteroides', 'Prevotella')"
+    results_name   = 'results_nonhuman'
+}
+```
+
+- Expressions use the columns of the peptide library attached by `phiperio` (e.g. `species`, `genus`, `family`, `is_EBV`, `is_auto`). An unknown column name stops the run with the list of available columns.
+- Use single quotes for text values; double quotes are rejected. Logical values are `TRUE`/`FALSE`.
+- Peptides where an expression is `NA` are dropped, so `species != 'Homo sapiens'` also drops peptides without a species. Use `is.na(species) | species != 'Homo sapiens'` to keep them.
+- The filter applies to the whole analysis: enrichment counts, alpha/beta diversity, similarity, POP and DELTA. The multiple-testing correction is computed over the remaining peptides and features, and DELTA rank features are built only from the remaining peptides.
+- The parquet is not rebuilt; filtering happens when the analysis loads it.
+- The filter and the number of kept peptides are written to `<results_name>/peptide_filter.txt`.
+- Use a separate `results_name` per filter so results from different filters are not mixed.
 
 ## Workflow steps
 

@@ -100,6 +100,15 @@ parse_csv <- function(x, default = NULL) {
   x
 }
 
+# Like get_kv_arg(), but keeps quotes inside the value (needed for R expressions
+# such as species == 'Homo sapiens').
+get_kv_arg_raw <- function(key, default = NULL) {
+  pattern <- paste0("^", key, "=")
+  hit <- grep(pattern, args, value = TRUE)
+  if (length(hit) == 0) return(default)
+  trimws(sub(pattern, "", hit[[1]]))
+}
+
 N_CORES <- as.integer(get_kv_arg("N_CORES", default = "1"))
 MAX_GB  <- as.numeric(get_kv_arg("MAX_GB", default = "40"))
 
@@ -188,6 +197,9 @@ if (is.na(DELTA_MIN_M_EFF) || DELTA_MIN_M_EFF < 0) {
 }
 
 message("DELTA_MIN_M_EFF: ", DELTA_MIN_M_EFF)
+
+PEPTIDE_FILTER <- parse_nullable(get_kv_arg_raw("PEPTIDE_FILTER", default = NULL))
+message("PEPTIDE_FILTER: ", if (is.null(PEPTIDE_FILTER)) "none" else PEPTIDE_FILTER)
 
 # ------------------------------------------------------------------------------
 # Define main directory paths and load group configuration/helper functions
@@ -296,6 +308,34 @@ withr::with_preserve_seed({
 dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
 
 peplib <- as.data.frame(dplyr::collect(ps$peptide_library))
+
+# Optional peptide-library filter: restrict the library and the data to the
+# matching peptides. Everything below (counts, diversity, POP, DELTA and their
+# multiple-testing correction) then only sees these peptides.
+if (!is.null(PEPTIDE_FILTER)) {
+  n_lib_before <- nrow(peplib)
+  peplib   <- filter_peptide_library(peplib, PEPTIDE_FILTER)
+  keep_ids <- unique(as.character(peplib$peptide_id))
+
+  n_data_before <- ps$data_long %>% dplyr::distinct(peptide_id) %>%
+    dplyr::count() %>% dplyr::pull(n)
+
+  ps <- ps %>% dplyr::filter(peptide_id %in% !!keep_ids)
+
+  n_data_after <- ps$data_long %>% dplyr::distinct(peptide_id) %>%
+    dplyr::count() %>% dplyr::pull(n)
+
+  message("PEPTIDE_FILTER kept ", n_data_after, " of ", n_data_before,
+          " peptides in the data (", length(keep_ids), " of ", n_lib_before,
+          " in the library)")
+  writeLines(
+    c(paste("filter:", PEPTIDE_FILTER),
+      paste("data peptides kept:", n_data_after, "of", n_data_before),
+      paste("library peptides kept:", length(keep_ids), "of", n_lib_before)),
+    file.path(results_dir, "peptide_filter.txt")
+  )
+}
+
 # Library passed to the POP and DELTA rank analyses.
 peplib_ranks <- flag_ranks_as_features(peplib, RANK_COLS)
 # Library passed to profile_plot(), which needs pos and len_seq as numbers.

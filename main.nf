@@ -284,6 +284,21 @@ Allowed values:
         error "--delta_min_m_eff must be a non-negative number. Got: ${delta_min_m_eff}"
     }
 
+    /*
+    * Resolve peptide-library filter.
+    * A list is joined with ';', which the R side combines with AND.
+    */
+    def peptide_filter = (params.peptide_filter instanceof List)
+        ? params.peptide_filter.collect { it.toString().trim() }.findAll { it }.join(' ; ')
+        : (params.peptide_filter?.toString()?.trim() ?: '')
+
+    if (!peptide_filter || peptide_filter.equalsIgnoreCase('null')) {
+        peptide_filter = 'NULL'
+    }
+
+    if (peptide_filter.contains('"')) {
+        error "--peptide_filter: use single quotes inside expressions, e.g. species == 'Homo sapiens'. Got: ${peptide_filter}"
+    }
 
     /*
      * Resolve parquet output name.
@@ -317,6 +332,7 @@ Allowed values:
     log.info "  use_modules         : ${params.use_modules}"
     log.info "  noxreport           : ${params.noxreport}"
     log.info "  container           : ${params.container ?: 'none'}"
+    log.info "  peptide_filter      : ${peptide_filter}"
 
     /*
      * 01-create_phiper_object.R
@@ -366,7 +382,8 @@ Allowed values:
         aggregate_stat,
         params.delta_min_m_eff,
         results_name,
-        params.use_modules
+        params.use_modules,
+        peptide_filter
     )
 
     /*

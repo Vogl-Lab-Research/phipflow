@@ -161,3 +161,50 @@ test_that("flag rank columns become one feature named after the flag", {
   expect_equal(out$genus, peplib$genus)
   expect_equal(out$is_EBV, peplib$is_EBV)
 })
+
+# ------------------------------------------------------------------------------
+# filter_peptide_library
+# ------------------------------------------------------------------------------
+lib <- data.frame(
+  peptide_id = paste0("p", 1:5),
+  species    = c("Homo sapiens", "Homo sapiens", "Human gammaherpesvirus 4", NA, "Escherichia coli"),
+  is_EBV     = c(FALSE, FALSE, TRUE, FALSE, FALSE),
+  stringsAsFactors = FALSE
+)
+
+test_that("NULL or empty filter returns the library unchanged", {
+  expect_identical(filter_peptide_library(lib, NULL), lib)
+  expect_identical(filter_peptide_library(lib, "  "), lib)
+})
+
+test_that("equality filter keeps matching peptides", {
+  out <- filter_peptide_library(lib, "species == 'Homo sapiens'")
+  expect_equal(out$peptide_id, c("p1", "p2"))
+})
+
+test_that("inequality filter drops NA species", {
+  out <- filter_peptide_library(lib, "species != 'Homo sapiens'")
+  expect_equal(out$peptide_id, c("p3", "p5"))
+})
+
+test_that("NA species can be kept explicitly", {
+  out <- filter_peptide_library(lib, "is.na(species) | species != 'Homo sapiens'")
+  expect_equal(out$peptide_id, c("p3", "p4", "p5"))
+})
+
+test_that("logical flag columns work directly", {
+  expect_equal(filter_peptide_library(lib, "is_EBV")$peptide_id, "p3")
+})
+
+test_that("';' combines expressions with AND", {
+  out <- filter_peptide_library(lib, "species != 'Homo sapiens' ; !is_EBV")
+  expect_equal(out$peptide_id, "p5")
+})
+
+test_that("unknown columns give a clear error", {
+  expect_error(filter_peptide_library(lib, "genus == 'X'"), "unknown peptide library columns")
+})
+
+test_that("a filter that removes everything is an error", {
+  expect_error(filter_peptide_library(lib, "species == 'nothing'"), "removed all peptides")
+})
