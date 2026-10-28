@@ -28,6 +28,8 @@ jobs:
             any::withr
             any::purrr
             any::scales
+            any::dplyr
+            any::rlang
 
       - name: Run testthat
         run: Rscript -e 'testthat::test_dir("tests/testthat", stop_on_failure = TRUE)'
