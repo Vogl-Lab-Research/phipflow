@@ -137,15 +137,18 @@ Example:
 """
     }
 
-    if (!params.metadata_file) {
+    if (!params.metadata_file && !params.metadata_path) {
         error """
-Missing required parameter: --metadata_file
+Missing required parameter: --metadata_file or --metadata_path
 
-metadata_file should be the file name inside:
+metadata_file is the file name inside:
   <project_name>/Metadata/
+
+metadata_path is a full path to the metadata file anywhere else.
 
 Example:
   --metadata_file <project>_metadata.csv
+  --metadata_path /path/to/<project>_metadata.csv
 """
     }
 
@@ -187,9 +190,13 @@ Allowed values:
     def metadata_dir_path  = file("${params.base_dir}/${params.project_name}/Metadata")
     def project_r_dir_path = file("${params.base_dir}/${params.project_name}/R")
 
-    def metadata_path      = file("${params.base_dir}/${params.project_name}/Metadata/${params.metadata_file}")
-    def exist_path         = file("${params.base_dir}/${params.project_name}/Data/${params.exist_file}")
-    def fold_path          = file("${params.base_dir}/${params.project_name}/Data/${params.fold_file}")
+    /*
+     * Input files: a full path from params.*_path wins; otherwise the
+     * default location inside the project folder is used.
+     */
+    def metadata_path = file(params.metadata_path ?: "${params.base_dir}/${params.project_name}/Metadata/${params.metadata_file}")
+    def exist_path    = file(params.exist_path    ?: "${params.base_dir}/${params.project_name}/Data/${params.exist_file}")
+    def fold_path     = file(params.fold_path     ?: "${params.base_dir}/${params.project_name}/Data/${params.fold_file}")
     def group_config_path  = file("${params.base_dir}/${params.project_name}/R/group_config.R")
 
     /*
@@ -209,8 +216,6 @@ Allowed values:
     requireExistingPaths([
         'base_dir'                   : base_dir_path,
         'Project directory'          : project_dir_path,
-        'Project Data directory'     : data_dir_path,
-        'Project Metadata directory' : metadata_dir_path,
         'Project R directory'        : project_r_dir_path,
         'Metadata file'              : metadata_path,
         'Exist matrix'               : exist_path,
@@ -297,6 +302,9 @@ Allowed values:
     log.info "  base_dir            : ${params.base_dir}"
     log.info "  project_name        : ${params.project_name}"
     log.info "  metadata_file       : ${params.metadata_file}"
+    log.info "  exist_path          : ${exist_path}"
+    log.info "  fold_path           : ${fold_path}"
+    log.info "  metadata_path       : ${metadata_path}"
     log.info "  parquet_name        : ${parquet_name}"
     log.info "  group_cols          : ${group_cols.join(', ')}"
     log.info "  report_group_cols   : ${report_group_cols.join(', ')}"
@@ -317,9 +325,9 @@ Allowed values:
     CREATE_PHIPER_OBJECT(
         params.base_dir,
         params.project_name,
-        params.exist_file,
-        params.fold_file,
-        params.metadata_file,
+        exist_path,
+        fold_path,
+        metadata_path,
         parquet_name,
         params.sample_prefix,
         params.peptide_col,
@@ -396,7 +404,7 @@ Allowed values:
             RENDER_PHIPER_REPORTS.out.report_marker,
             params.base_dir,
             params.project_name,
-            params.metadata_file,
+            metadata_path.toString(),
             results_name,
             params.use_modules,
             params.delta_min_m_eff

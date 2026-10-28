@@ -24,7 +24,16 @@ project_name   <- get_arg("--project_name", required = TRUE)
 
 exist_file     <- get_arg("--exist_file", "exist.csv")
 fold_file      <- get_arg("--fold_file", "fold.csv")
-metadata_file  <- get_arg("--metadata_file", required = TRUE)
+metadata_file  <- get_arg("--metadata_file", NULL)
+
+# Optional full paths; override the Data/ and Metadata/ defaults.
+exist_path_arg <- get_arg("--exist_path", NULL)
+fold_path_arg  <- get_arg("--fold_path", NULL)
+meta_path_arg  <- get_arg("--metadata_path", NULL)
+
+if (is.null(metadata_file) && is.null(meta_path_arg)) {
+  stop("Provide --metadata_file or --metadata_path", call. = FALSE)
+}
 
 out_parquet    <- get_arg("--out_parquet", required = TRUE)
 
@@ -64,9 +73,9 @@ project_dir <- file.path(base_dir, project_name)
 data_dir    <- file.path(project_dir, "Data")
 meta_dir    <- file.path(project_dir, "Metadata")
 
-exist_path  <- file.path(data_dir, exist_file)
-fold_path   <- file.path(data_dir, fold_file)
-meta_path   <- file.path(meta_dir, metadata_file)
+exist_path  <- if (!is.null(exist_path_arg)) exist_path_arg else file.path(data_dir, exist_file)
+fold_path   <- if (!is.null(fold_path_arg))  fold_path_arg  else file.path(data_dir, fold_file)
+meta_path   <- if (!is.null(meta_path_arg))  meta_path_arg  else file.path(meta_dir, metadata_file)
 
 out_path    <- file.path(data_dir, out_parquet)
 
