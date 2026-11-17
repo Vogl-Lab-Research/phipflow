@@ -1035,6 +1035,35 @@ for (cmp_idx in seq_along(comparisons)) {
   # ----------------------------------------------------------------------------
   # beta diversity
   # ----------------------------------------------------------------------------
+  # Samples with no enriched peptides (possible after peptide_filter) have
+  # undefined distances (0/0) and break PERMANOVA; exclude them from beta
+  # diversity and similarity. POP/DELTA use the data saved above and keep them.
+  empty_samples <- ps_cmp$data_long %>%
+    dplyr::group_by(sample_id) %>%
+    dplyr::summarise(n_hits = sum(exist, na.rm = TRUE), .groups = "drop") %>%
+    dplyr::filter(n_hits == 0) %>%
+    dplyr::pull(sample_id)
+
+  if (length(empty_samples) > 0) {
+    message("Excluding ", length(empty_samples),
+            " sample(s) with no enriched peptides from beta diversity")
+    ps_cmp <- ps_cmp %>% dplyr::filter(!sample_id %in% !!empty_samples)
+
+    # paired designs: drop subjects that no longer have both samples
+    if (!is.null(paired_col)) {
+      ps_cmp <- ps_cmp %>%
+        dplyr::group_by(.data[[paired_col]]) %>%
+        dplyr::filter(any(.data[[group_col]] == var1) &
+                      any(.data[[group_col]] == var2)) %>%
+        dplyr::ungroup()
+    }
+
+    dir.create(file.path(out_dir, "beta_diversity"), recursive = TRUE,
+               showWarnings = FALSE)
+    writeLines(as.character(empty_samples),
+               file.path(out_dir, "beta_diversity", "excluded_empty_samples.txt"))
+  }
+
   group_n <- ps_cmp$data_long%>%
     dplyr::filter(group_char %in% c(var1, var2)) %>%
     dplyr::distinct(sample_id, group_char) %>%
